@@ -33,7 +33,7 @@ export const FilterChips: React.FC = () => {
         isOpenNow,
         maxPrepTime !== null,
         fulfillmentType !== 'Both',
-        sortBy !== 'Relevance',
+        sortBy !== 'Distance: Low to High',
         isNewlyAdded,
         minRating > 0,
         isPopular
@@ -65,10 +65,8 @@ export const FilterChips: React.FC = () => {
                         onChange={(e) => setSortBy(e.target.value)}
                         className="appearance-none border border-gray-300 text-gray-700 pl-3 pr-8 py-1.5 md:pl-4 md:pr-10 md:py-2 rounded-full font-medium text-xs md:text-sm bg-white hover:bg-gray-50 transition-colors cursor-pointer outline-none"
                     >
-                        <option value="Relevance">Sort By: Relevance</option>
-                        <option value="Fastest Delivery">Fastest Delivery</option>
-                        <option value="Low to high">Cost: Low to High</option>
-                        <option value="High to low">Cost: High to Low</option>
+                        <option value="Distance: Low to High">Sort By: Distance: Low to High</option>
+                        <option value="Rating: High to Low">Sort By: Rating: High to Low</option>
                     </select>
                     <ChevronDown className="w-3 h-3 md:w-4 md:h-4 text-gray-500 absolute right-2.5 md:right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
