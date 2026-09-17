@@ -39,11 +39,18 @@ export interface Restaurant {
     isAcceptingOrders: boolean;
     menu: any[]; // Menu details are fetched separately on detail page now
     addressLine?: string;
+    address?: string;
     latitude?: number;
     longitude?: number;
     pincode?: string;
     city?: string;
+    area?: string;
     phone?: string;
+    phoneNumber?: string;
+    closingTime?: string;
+    openingTime?: string;
+    ratingSource?: string;
+    ratingCountText?: string;
 }
 
 interface FilterContextType {
@@ -199,28 +206,32 @@ export const FilterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                 const mappedRes: Restaurant = {
                     id: item.id,
                     name: item.name,
-                    cuisines: item.cuisineTypes.length > 0 ? item.cuisineTypes : ["Multi-cuisine"],
+                    cuisines: item.cuisineTypes || [],
                     rating: item.rating ?? null,
                     userRatingCount: item.userRatingCount ?? null,
-                    deliveryTime: `${item.avgPrepTimeMins}-${item.avgPrepTimeMins + 10} min`,
-                    distance: dist != null ? formatDistance(dist) : "-- km",
-                    costForTwo: `₹${item.minOrderAmount > 0 ? item.minOrderAmount * 2 : 150}`,
+                    deliveryTime: item.avgPrepTimeMins ? `${item.avgPrepTimeMins}-${item.avgPrepTimeMins + 10} min` : '',
+                    distance: dist != null ? formatDistance(dist) : '',
+                    costForTwo: item.minOrderAmount ? `₹${item.minOrderAmount * 2}` : '',
                     imageUrl: (item.logoUrl && item.logoUrl !== 'null' && item.logoUrl !== 'undefined' && !item.logoUrl.includes('example.com'))
                         ? item.logoUrl
-                        : getFallbackImage(item.name, item.cuisineTypes[0] || 'General', 'restaurant'),
+                        : getFallbackImage(item.name, item.cuisineTypes?.[0] || 'General', 'restaurant'),
                     promoted: false,
                     discount: undefined,
                     isVeg: item.isPureVeg,
                     isPureVeg: item.isPureVeg,
                     isVeganFriendly: item.isVeganFriendly,
                     hasJainOptions: item.hasJainOptions,
-                    categories: item.cuisineTypes.length > 0 ? item.cuisineTypes : ["Multi-cuisine"],
+                    categories: item.cuisineTypes || [],
                     acceptsPickup: item.acceptsPickup,
                     isAcceptingOrders: item.isAcceptingOrders,
                     menu: [],
                     addressLine: item.addressLine,
+                    address: item.addressLine,
                     latitude: item.latitude,
-                    longitude: item.longitude
+                    longitude: item.longitude,
+                    closingTime: item.closingTime,
+                    openingTime: item.openingTime,
+                    phone: (item as any).phoneNumber || (item as any).phone
                 };
                 return mappedRes;
             });

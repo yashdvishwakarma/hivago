@@ -71,13 +71,11 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({ item, restaurantId, 
     return (
         <div
             id={`item-${item.id}`}
-            className={`bg-white rounded-[20px] overflow-hidden shadow-sm hover:shadow-md transition-all duration-700 group flex flex-col h-full border ${isHighlighted ? 'border-brand-primary ring-2 ring-brand-primary/20 scale-[1.02] bg-red-50/10' : 'border-gray-100'}`}
+            onClick={onClick}
+            className={`bg-white rounded-[20px] overflow-hidden shadow-sm hover:shadow-md transition-all duration-700 group flex flex-col h-full border ${onClick ? 'cursor-pointer' : ''} ${isHighlighted ? 'border-brand-primary ring-2 ring-brand-primary/20 scale-[1.02] bg-red-50/10' : 'border-gray-100'}`}
         >
             {/* Image Section */}
-            <div
-                className={`relative aspect-[4/3] overflow-hidden ${onClick ? 'cursor-pointer' : ''}`}
-                onClick={onClick}
-            >
+            <div className="relative aspect-[4/3] overflow-hidden">
                 <img
                     src={item.imageUrl || getFallbackImage(item.name)}
                     alt={item.name}
@@ -116,7 +114,7 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({ item, restaurantId, 
                         {item.name}
                     </h4>
                     <p className="text-[11px] text-gray-400 font-medium line-clamp-2 leading-relaxed">
-                        {item.description || "Lorem ipsum, lorem ipsum"}
+                        {item.description}
                     </p>
                 </div>
 

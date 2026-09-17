@@ -5,7 +5,7 @@ import { ArrowLeft, Clock, Search, Mic, MapPin, Star } from 'lucide-react';
 import { MenuPageSkeleton } from '../components/Skeletons';
 import { MenuItemCard, MenuItem } from '../components/MenuItemCard';
 import { ItemDetailOverlay } from '../components/ItemDetailOverlay';
-import { RestaurantReviewsSection } from '../components/RestaurantReviewsSection';
+// import { RestaurantReviewsSection } from '../components/RestaurantReviewsSection';
 import { useRestaurantReviews } from '../../hooks/useRestaurantReviews';
 import { useFilters, Restaurant } from '../context/FilterContext';
 import { useCart } from '../context/CartContext';
@@ -25,7 +25,7 @@ export const RestaurantMenuPage: React.FC = () => {
     const { isLoading: filtersLoading } = useFilters();
     const { selectedLocation } = useUserLocation();
 
-    const { data: reviewsData, isLoading: reviewsLoading } = useRestaurantReviews(id);
+    const { data: reviewsData } = useRestaurantReviews(id);
 
     const { fulfillmentType, setFulfillmentType } = useCart();
     const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
@@ -697,7 +697,7 @@ export const RestaurantMenuPage: React.FC = () => {
             </div>
 
             {/* Customer Reviews Section */}
-            <RestaurantReviewsSection data={reviewsData} isLoading={reviewsLoading} />
+            {/* <RestaurantReviewsSection data={reviewsData} isLoading={reviewsLoading} /> */}
 
             {/* Overlay Component */}
             <ItemDetailOverlay 
