@@ -124,9 +124,12 @@ export const FilterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const [pageSize, setPageSize] = useState(20);
 
     // Map UI sorting to API sort values
-    const mapSortValue = (_uiSort: string): RestaurantSort | undefined => {
+    const mapSortValue = (uiSort: string): RestaurantSort | undefined => {
         if (isNewlyAdded) return 'newest';
-        return undefined;
+        switch (uiSort) {
+            case 'Relevance': return searchQuery ? 'relevance' : undefined;
+            default: return undefined;
+        }
     };
 
     // Construct filters object for the hook
@@ -238,21 +241,24 @@ export const FilterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             });
         }
 
-        // Default or 'Distance: Low to High': sort nearest first
-        return list.sort((a, b) => {
-            const uLat = selectedLocation?.latitude;
-            const uLng = selectedLocation?.longitude;
-            const distA = (uLat != null && uLng != null && a.latitude != null && a.longitude != null)
-                ? haversineKm(uLat, uLng, a.latitude, a.longitude)
-                : null;
-            const distB = (uLat != null && uLng != null && b.latitude != null && b.longitude != null)
-                ? haversineKm(uLat, uLng, b.latitude, b.longitude)
-                : null;
-            if (distA != null && distB != null) return distA - distB;
-            if (distA != null) return -1;
-            if (distB != null) return 1;
-            return 0;
-        });
+        if (sortBy === 'Distance: Low to High') {
+            return list.sort((a, b) => {
+                const uLat = selectedLocation?.latitude;
+                const uLng = selectedLocation?.longitude;
+                const distA = (uLat != null && uLng != null && a.latitude != null && a.longitude != null)
+                    ? haversineKm(uLat, uLng, a.latitude, a.longitude)
+                    : null;
+                const distB = (uLat != null && uLng != null && b.latitude != null && b.longitude != null)
+                    ? haversineKm(uLat, uLng, b.latitude, b.longitude)
+                    : null;
+                if (distA != null && distB != null) return distA - distB;
+                if (distA != null) return -1;
+                if (distB != null) return 1;
+                return 0;
+            });
+        }
+
+        return list;
     }, [data, selectedLocation, sortBy]);
 
     const totalCount = data?.totalCount || 0;

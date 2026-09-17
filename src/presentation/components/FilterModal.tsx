@@ -98,7 +98,11 @@ export const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose }) => 
                     <section>
                         <h3 className="text-sm font-bold text-gray-900 mb-3">Sort By</h3>
                         <div className="flex flex-wrap gap-2.5">
-                            {['Distance: Low to High', 'Rating: High to Low'].map(option => (
+                            {[
+                                'Relevance',
+                                'Distance: Low to High',
+                                'Rating: High to Low'
+                            ].map(option => (
                                 <button
                                     key={option}
                                     onClick={() => setTempSort(option)}
