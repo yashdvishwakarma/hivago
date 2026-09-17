@@ -114,7 +114,7 @@ export const FilterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const [maxPrepTime, setMaxPrepTime] = useState<number | null>(null);
     const [priceRange, setPriceRange] = useState<[number, number] | null>(null);
     const [fulfillmentType, setFulfillmentType] = useState<'Delivery' | 'Pickup' | 'Both'>('Both');
-    const [sortBy, setSortBy] = useState('Relevance');
+    const [sortBy, setSortBy] = useState('Distance: Low to High');
     const [isNewlyAdded, setIsNewlyAdded] = useState(false);
     const [minRating, setMinRating] = useState(0);
     const [isPopular, setIsPopular] = useState(false);
@@ -127,10 +127,6 @@ export const FilterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const mapSortValue = (uiSort: string): RestaurantSort | undefined => {
         if (isNewlyAdded) return 'newest';
         switch (uiSort) {
-            case 'Rating': return undefined; // API doesn't have rating sort yet
-            case 'Low to high': return 'cost_asc';
-            case 'High to low': return 'cost_desc';
-            case 'Fastest Delivery': return 'prep_time';
             case 'Relevance': return searchQuery ? 'relevance' : undefined;
             default: return undefined;
         }
@@ -236,11 +232,28 @@ export const FilterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                 return mappedRes;
             });
 
-        if (sortBy === 'Rating') {
+        if (sortBy === 'Rating: High to Low' || sortBy === 'Rating') {
             return list.sort((a, b) => {
                 if (a.rating != null && b.rating != null) return b.rating - a.rating;
                 if (a.rating != null) return -1;
                 if (b.rating != null) return 1;
+                return 0;
+            });
+        }
+
+        if (sortBy === 'Distance: Low to High') {
+            return list.sort((a, b) => {
+                const uLat = selectedLocation?.latitude;
+                const uLng = selectedLocation?.longitude;
+                const distA = (uLat != null && uLng != null && a.latitude != null && a.longitude != null)
+                    ? haversineKm(uLat, uLng, a.latitude, a.longitude)
+                    : null;
+                const distB = (uLat != null && uLng != null && b.latitude != null && b.longitude != null)
+                    ? haversineKm(uLat, uLng, b.latitude, b.longitude)
+                    : null;
+                if (distA != null && distB != null) return distA - distB;
+                if (distA != null) return -1;
+                if (distB != null) return 1;
                 return 0;
             });
         }
