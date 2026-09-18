@@ -563,7 +563,8 @@ const mapRestaurant = (apiRes: ApiRestaurant, menus: any[] = []): Restaurant => 
         id: apiRes.id,
         name: apiRes.name,
         cuisines: cuisines,
-        rating: 4.2, // Default rating as API lacks it
+        rating: (apiRes as any).rating != null ? (apiRes as any).rating : ((apiRes as any).googlePlaceDetails?.rating != null ? (apiRes as any).googlePlaceDetails.rating : null),
+        userRatingCount: (apiRes as any).userRatingCount != null ? (apiRes as any).userRatingCount : ((apiRes as any).googlePlaceDetails?.userRatingCount != null ? (apiRes as any).googlePlaceDetails.userRatingCount : null),
         deliveryTime: `${prepTime}-${prepTime + 10} min`,
         distance: "-- km", // Calculated at display time using real coordinates
         costForTwo: "₹400", // Dummy cost

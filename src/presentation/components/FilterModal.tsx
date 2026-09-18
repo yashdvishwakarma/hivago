@@ -49,7 +49,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose }) => 
     if (!isOpen) return null;
 
     const handleReset = () => {
-        setTempSort('Relevance');
+        setTempSort('Distance: Low to High');
         setTempVeg(false);
         setTempVegan(false);
         setTempJain(false);
@@ -98,7 +98,11 @@ export const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose }) => 
                     <section>
                         <h3 className="text-sm font-bold text-gray-900 mb-3">Sort By</h3>
                         <div className="flex flex-wrap gap-2.5">
-                            {['Relevance', 'Low to high', 'High to low', 'Fastest Delivery'].map(option => (
+                            {[
+                                'Relevance',
+                                'Distance: Low to High',
+                                'Rating: High to Low'
+                            ].map(option => (
                                 <button
                                     key={option}
                                     onClick={() => setTempSort(option)}
@@ -139,8 +143,6 @@ export const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose }) => 
                         </div>
                     </section>
 
-
-
                     {/* Service Type */}
                     <section>
                         <h3 className="text-sm font-bold text-gray-900 mb-3">Service Type</h3>
@@ -155,55 +157,6 @@ export const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose }) => 
                                         }`}
                                 >
                                     {type}
-                                </button>
-                            ))}
-                        </div>
-                    </section>
-
-                    {/* Max Prep Time */}
-                    <section>
-                        <h3 className="text-sm font-bold text-gray-900 mb-3">Max Prep Time</h3>
-                        <div className="flex flex-wrap gap-2.5">
-                            {[10, 20, 30, 45].map(mins => (
-                                <button
-                                    key={mins}
-                                    onClick={() => setTempPrepTime(tempPrepTime === mins ? null : mins)}
-                                    className={`px-4 py-2 rounded-xl font-medium text-xs transition-all duration-200 ${tempPrepTime === mins
-                                        ? 'bg-brand-primary text-white shadow-lg shadow-red-100'
-                                        : 'border border-gray-100 text-gray-500 hover:bg-gray-50'
-                                        }`}
-                                >
-                                    Under {mins} min
-                                </button>
-                            ))}
-                        </div>
-                    </section>
-
-                    {/* Price Range */}
-                    <section>
-                        <div className="flex justify-between items-center mb-3">
-                            <h3 className="text-sm font-bold text-gray-900">Price Range (Min Order)</h3>
-                            {tempPriceRange && (
-                                <span className="text-xs font-bold text-emerald-600">
-                                    ₹{tempPriceRange[0]} - ₹{tempPriceRange[1]}
-                                </span>
-                            )}
-                        </div>
-                        <div className="flex gap-3">
-                            {[
-                                { label: 'Below ₹200', range: [0, 200] },
-                                { label: '₹200 - ₹500', range: [200, 500] },
-                                { label: 'Above ₹500', range: [500, 2000] },
-                            ].map(btn => (
-                                <button
-                                    key={btn.label}
-                                    onClick={() => setTempPriceRange(tempPriceRange?.[0] === btn.range[0] && tempPriceRange?.[1] === btn.range[1] ? null : btn.range as [number, number])}
-                                    className={`flex-1 px-3 py-2 rounded-xl font-medium text-[10px] transition-all duration-200 ${tempPriceRange?.[0] === btn.range[0] && tempPriceRange?.[1] === btn.range[1]
-                                        ? 'bg-brand-primary text-white shadow-lg shadow-red-100'
-                                        : 'border border-gray-100 text-gray-500 hover:bg-gray-50'
-                                        }`}
-                                >
-                                    {btn.label}
                                 </button>
                             ))}
                         </div>
