@@ -44,7 +44,7 @@ export const Navbar: React.FC = () => {
                 </div>
 
                 {/* Location - Hidden on small mobile */}
-                <div 
+                <div
                     onClick={() => {
                         if (isTokenValid()) {
                             setIsLocationSelectorOpen(true);
@@ -99,7 +99,7 @@ export const Navbar: React.FC = () => {
             </nav>
 
             {/* Mobile Location Bar - Design from Image */}
-            <div 
+            <div
                 onClick={() => {
                     if (isTokenValid()) {
                         setIsLocationSelectorOpen(true);
@@ -204,9 +204,9 @@ export const Navbar: React.FC = () => {
                                 </div>
                             )}
                             <div className='flex p-3 border-t-2 border-gray-100 mt-3 pt-6'>
-                                <a 
-                                    href="https://wa.me/919082220155?text=Need%20HELP!" 
-                                    target="_blank" 
+                                <a
+                                    href="https://wa.me/919082220155?text=Need%20HELP!"
+                                    target="_blank"
                                     rel="noopener noreferrer"
                                     className="flex flex-col group"
                                 >
@@ -220,9 +220,9 @@ export const Navbar: React.FC = () => {
                 </div>
             </div>
 
-            <LocationSelectorOverlay 
-                isOpen={isLocationSelectorOpen} 
-                onClose={() => setIsLocationSelectorOpen(false)} 
+            <LocationSelectorOverlay
+                isOpen={isLocationSelectorOpen}
+                onClose={() => setIsLocationSelectorOpen(false)}
             />
         </header>
     );
