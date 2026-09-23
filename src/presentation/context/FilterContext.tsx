@@ -22,7 +22,8 @@ export interface Restaurant {
     id: string;
     name: string;
     cuisines: string[];
-    rating: number;
+    rating?: number | null;
+    userRatingCount?: number | null;
     deliveryTime: string;
     distance: string;
     costForTwo: string;
@@ -38,11 +39,18 @@ export interface Restaurant {
     isAcceptingOrders: boolean;
     menu: any[]; // Menu details are fetched separately on detail page now
     addressLine?: string;
+    address?: string;
     latitude?: number;
     longitude?: number;
     pincode?: string;
     city?: string;
+    area?: string;
     phone?: string;
+    phoneNumber?: string;
+    closingTime?: string;
+    openingTime?: string;
+    ratingSource?: string;
+    ratingCountText?: string;
 }
 
 interface FilterContextType {
@@ -106,7 +114,7 @@ export const FilterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const [maxPrepTime, setMaxPrepTime] = useState<number | null>(null);
     const [priceRange, setPriceRange] = useState<[number, number] | null>(null);
     const [fulfillmentType, setFulfillmentType] = useState<'Delivery' | 'Pickup' | 'Both'>('Both');
-    const [sortBy, setSortBy] = useState('Relevance');
+    const [sortBy, setSortBy] = useState('Distance: Low to High');
     const [isNewlyAdded, setIsNewlyAdded] = useState(false);
     const [minRating, setMinRating] = useState(0);
     const [isPopular, setIsPopular] = useState(false);
@@ -119,10 +127,6 @@ export const FilterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const mapSortValue = (uiSort: string): RestaurantSort | undefined => {
         if (isNewlyAdded) return 'newest';
         switch (uiSort) {
-            case 'Rating': return undefined; // API doesn't have rating sort yet
-            case 'Low to high': return 'cost_asc';
-            case 'High to low': return 'cost_desc';
-            case 'Fastest Delivery': return 'prep_time';
             case 'Relevance': return searchQuery ? 'relevance' : undefined;
             default: return undefined;
         }
@@ -174,7 +178,7 @@ export const FilterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     // Normalize data to frontend interface
     const filteredRestaurants: Restaurant[] = useMemo(() => {
         if (!data?.items) return [];
-        return data.items
+        const list = data.items
             .filter((item: RestaurantListItem) => {
                 if (!item.isAcceptingOrders) return false;
                 
@@ -195,33 +199,67 @@ export const FilterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                         : haversineKm(selectedLocation.latitude, selectedLocation.longitude, item.latitude, item.longitude))
                     : item.distanceKm;
 
-                return {
+                const mappedRes: Restaurant = {
                     id: item.id,
                     name: item.name,
-                    cuisines: item.cuisineTypes.length > 0 ? item.cuisineTypes : ["Multi-cuisine"],
-                    rating: 4.2, // API currently missing rating
-                    deliveryTime: `${item.avgPrepTimeMins}-${item.avgPrepTimeMins + 10} min`,
-                    distance: dist != null ? formatDistance(dist) : "-- km",
-                    costForTwo: `₹${item.minOrderAmount > 0 ? item.minOrderAmount * 2 : 150}`,
+                    cuisines: item.cuisineTypes || [],
+                    rating: item.rating ?? null,
+                    userRatingCount: item.userRatingCount ?? null,
+                    deliveryTime: item.avgPrepTimeMins ? `${item.avgPrepTimeMins}-${item.avgPrepTimeMins + 10} min` : '',
+                    distance: dist != null ? formatDistance(dist) : '',
+                    costForTwo: item.minOrderAmount ? `₹${item.minOrderAmount * 2}` : '',
                     imageUrl: (item.logoUrl && item.logoUrl !== 'null' && item.logoUrl !== 'undefined' && !item.logoUrl.includes('example.com'))
                         ? item.logoUrl
-                        : getFallbackImage(item.name, item.cuisineTypes[0] || 'General', 'restaurant'),
+                        : getFallbackImage(item.name, item.cuisineTypes?.[0] || 'General', 'restaurant'),
                     promoted: false,
                     discount: undefined,
                     isVeg: item.isPureVeg,
                     isPureVeg: item.isPureVeg,
                     isVeganFriendly: item.isVeganFriendly,
                     hasJainOptions: item.hasJainOptions,
-                    categories: item.cuisineTypes.length > 0 ? item.cuisineTypes : ["Multi-cuisine"],
+                    categories: item.cuisineTypes || [],
                     acceptsPickup: item.acceptsPickup,
                     isAcceptingOrders: item.isAcceptingOrders,
                     menu: [],
                     addressLine: item.addressLine,
+                    address: item.addressLine,
                     latitude: item.latitude,
-                    longitude: item.longitude
+                    longitude: item.longitude,
+                    closingTime: item.closingTime,
+                    openingTime: item.openingTime,
+                    phone: (item as any).phoneNumber || (item as any).phone
                 };
+                return mappedRes;
             });
-    }, [data, selectedLocation]);
+
+        if (sortBy === 'Rating: High to Low' || sortBy === 'Rating') {
+            return list.sort((a, b) => {
+                if (a.rating != null && b.rating != null) return b.rating - a.rating;
+                if (a.rating != null) return -1;
+                if (b.rating != null) return 1;
+                return 0;
+            });
+        }
+
+        if (sortBy === 'Distance: Low to High') {
+            return list.sort((a, b) => {
+                const uLat = selectedLocation?.latitude;
+                const uLng = selectedLocation?.longitude;
+                const distA = (uLat != null && uLng != null && a.latitude != null && a.longitude != null)
+                    ? haversineKm(uLat, uLng, a.latitude, a.longitude)
+                    : null;
+                const distB = (uLat != null && uLng != null && b.latitude != null && b.longitude != null)
+                    ? haversineKm(uLat, uLng, b.latitude, b.longitude)
+                    : null;
+                if (distA != null && distB != null) return distA - distB;
+                if (distA != null) return -1;
+                if (distB != null) return 1;
+                return 0;
+            });
+        }
+
+        return list;
+    }, [data, selectedLocation, sortBy]);
 
     const totalCount = data?.totalCount || 0;
 

@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { getFallbackImage } from '../../utils/imageUtils';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Clock, Search, Mic, MapPin } from 'lucide-react';
+import { ArrowLeft, Clock, Search, Mic, MapPin, Star } from 'lucide-react';
 import { MenuPageSkeleton } from '../components/Skeletons';
 import { MenuItemCard, MenuItem } from '../components/MenuItemCard';
 import { ItemDetailOverlay } from '../components/ItemDetailOverlay';
+// import { RestaurantReviewsSection } from '../components/RestaurantReviewsSection';
+import { useRestaurantReviews } from '../../hooks/useRestaurantReviews';
 import { useFilters, Restaurant } from '../context/FilterContext';
 import { useCart } from '../context/CartContext';
 import DIContainer from '../../di/container';
@@ -22,6 +24,8 @@ export const RestaurantMenuPage: React.FC = () => {
     const highlightedId = searchParams.get('highlight');
     const { isLoading: filtersLoading } = useFilters();
     const { selectedLocation } = useUserLocation();
+
+    const { data: reviewsData } = useRestaurantReviews(id);
 
     const { fulfillmentType, setFulfillmentType } = useCart();
     const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
@@ -358,7 +362,19 @@ export const RestaurantMenuPage: React.FC = () => {
                                     ? formatDistance(haversineKm(selectedLocation.latitude, selectedLocation.longitude, restaurant.latitude, restaurant.longitude))
                                     : '-- km'}</span>
                             </div>
-                            {/* No ratings here */}
+                            {/* Rating Badge (Mobile) */}
+                            {reviewsData?.rating != null && (
+                                <>
+                                    <span className="text-gray-300">•</span>
+                                    <div className="flex items-center gap-1 bg-amber-50 text-amber-900 px-2 py-0.5 rounded-full border border-amber-200/80">
+                                        <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                                        <span>{reviewsData.rating.toFixed(1)}</span>
+                                        {reviewsData.userRatingCount != null && (
+                                            <span className="text-amber-700 font-normal">({reviewsData.userRatingCount.toLocaleString()})</span>
+                                        )}
+                                    </div>
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -534,6 +550,15 @@ export const RestaurantMenuPage: React.FC = () => {
                                             : '-- km'}
                                     </span>
                                 </div>
+                                {reviewsData?.rating != null && (
+                                    <div className="flex items-center gap-2 bg-amber-50 text-amber-900 border border-amber-200/80 px-3.5 py-1 rounded-full shadow-xs">
+                                        <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                                        <span className="text-base font-bold">{reviewsData.rating.toFixed(1)}</span>
+                                        {reviewsData.userRatingCount != null && (
+                                            <span className="text-sm font-semibold text-amber-700">({reviewsData.userRatingCount.toLocaleString()})</span>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -670,6 +695,9 @@ export const RestaurantMenuPage: React.FC = () => {
                     )}
                 </div>
             </div>
+
+            {/* Customer Reviews Section */}
+            {/* <RestaurantReviewsSection data={reviewsData} isLoading={reviewsLoading} /> */}
 
             {/* Overlay Component */}
             <ItemDetailOverlay 

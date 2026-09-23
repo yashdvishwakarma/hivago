@@ -31,6 +31,28 @@ export const OrderTrackingPage: React.FC = () => {
     const [deliveryCodes, setDeliveryCodes] = useState<{ pickupCode: string | null, dropCode: string | null } | null>(null);
     const hasFetchedQuoteRef = React.useRef(false);
 
+    function handleNeedHelp(orderNumber: string) {
+        const number = (import.meta.env.VITE_SUPPORT_WHATSAPP_NUMBER || '919082220155').replace(/[^0-9]/g, '');
+        const currentId = order?.id || orderId || orderNumber || 'N/A';
+        const displayOrderNum = order?.orderNumber || orderNumber || currentId;
+        const restName = order?.restaurantName || restaurantData?.name || (order as any)?.restaurant?.name || 'N/A';
+        const restId = order?.restaurantId || restaurantData?.id || (order as any)?.restaurant?.id || 'N/A';
+
+        const rawPaymentStatus = order?.paymentStatusDisplay || order?.paymentStatus;
+        const isCash = order?.paymentId === 'CASH' || (order as any)?.paymentMethod === 'CASH';
+        const payStatus = rawPaymentStatus
+            ? rawPaymentStatus
+            : isCash
+                ? 'Cash on Delivery'
+                : (order?.status ? `Order Status: ${order.status}` : 'N/A');
+
+        const messageText = `Hi, I need help with my order #${displayOrderNum}\n\nOrder ID: ${currentId}\nRestaurant: ${restName}\nRestaurant ID: ${restId}\nPayment Status: ${payStatus}`;
+
+        const message = encodeURIComponent(messageText);
+        window.open(`https://api.whatsapp.com/send/?phone=${number}&text=${message}`, "_blank", "noopener,noreferrer");
+    }
+
+
     // Handle browser back button on OrderTrackingPage to prevent returning to PayU/Payment pages
     useEffect(() => {
         window.history.pushState({ page: 'track-order' }, '', window.location.href);
@@ -295,7 +317,7 @@ export const OrderTrackingPage: React.FC = () => {
                 : (order?.status?.toUpperCase() === 'PAID')
                     ? 'Waiting for restaurant to accept'
                     : 'Your order has been placed successfully',
-            icon: CheckCircle,
+            icon: Clock,
             image: orderPlacedImg
         },
         {
@@ -328,7 +350,7 @@ export const OrderTrackingPage: React.FC = () => {
                 : (order?.status?.toUpperCase() === 'PAID')
                     ? 'Waiting for restaurant to accept'
                     : 'Your order has been placed successfully',
-            icon: CheckCircle,
+            icon: Clock,
             image: orderPlacedImg
         },
         {
@@ -1081,11 +1103,11 @@ export const OrderTrackingPage: React.FC = () => {
                                         return (
                                             <div key={stage.id} className="relative z-10 flex">
                                                 <div className="flex items-center gap-6 lg:gap-8 bg-white py-1">
-                                                    <div className={`w-12 h-12 lg:w-[34px] lg:h-[34px] rounded-full flex items-center justify-center border-[3px] lg:border-[4px] transition-colors duration-500 shrink-0 ${isCompleted || isActive ? 'bg-[#00A050] border-[#E6F5EC]' : 'bg-white border-gray-100'}`}>
-                                                        <Icon className={`w-5 h-5 lg:w-4 lg:h-4 ${isCompleted || isActive ? 'text-white' : 'text-gray-300'}`} />
+                                                    <div className={`w-12 h-12 lg:w-[36px] lg:h-[36px] rounded-full flex items-center justify-center border-[3px] lg:border-[3.5px] transition-all duration-500 shrink-0 ${isActive ? 'bg-[#E6F5EC] border-[#00A050] ring-4 ring-[#E6F5EC] shadow-sm' : isCompleted ? 'bg-[#00A050] border-[#00A050]' : 'bg-white border-gray-200'}`}>
+                                                        <Icon className={`w-5 h-5 lg:w-4.5 lg:h-4.5 ${isActive ? 'text-[#00A050]' : isCompleted ? 'text-white' : 'text-gray-300'}`} />
                                                     </div>
                                                     <div className="flex flex-col pt-1 bg-white pr-4">
-                                                        <span className={`text-[15px] lg:text-[18px] font-bold leading-none mb-1.5 transition-colors duration-500 tracking-tight ${isActive ? 'text-gray-900' : isCompleted ? 'text-gray-900' : 'text-gray-300'}`}>
+                                                        <span className={`text-[15px] lg:text-[18px] font-bold leading-none mb-1.5 transition-colors duration-500 tracking-tight ${isActive ? 'text-[#00A050]' : isCompleted ? 'text-gray-900' : 'text-gray-300'}`}>
                                                             {stage.label}
                                                         </span>
                                                         {(isActive || isCompleted) ? (
@@ -1265,9 +1287,13 @@ export const OrderTrackingPage: React.FC = () => {
                         </div>
 
                         {/* Need Help Button */}
-                        <button className="w-full bg-[#F2F4F7] text-gray-700 font-bold text-[16px] py-[18px] rounded-xl active:scale-[0.98] transition-all mb-6">
+                        <button
+                            onClick={() => handleNeedHelp(order?.orderNumber || orderId || order?.id || '')}
+                            className="w-full bg-[#F2F4F7] text-gray-700 font-bold text-[16px] py-[18px] rounded-xl active:scale-[0.98] transition-all mb-6 cursor-pointer"
+                        >
                             Need Help?
                         </button>
+
                     </div>
                 </div>
             </div>

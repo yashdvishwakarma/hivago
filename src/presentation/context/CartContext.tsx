@@ -1,8 +1,19 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useToast } from './ToastContext';
 import DIContainer from '../../di/container';
 import { CartItem } from '../../core/entities/CartItem';
 import { syncCart, isTokenValid, getCart, clearServerCart, clearAuthSession, DeliveryQuoteResponse } from '../../data/api';
+
+export interface ServerCartItem {
+    id?: string;
+    menuItemId: string;
+    name: string;
+    unitPrice: number;
+    quantity: number;
+    specialInstructions?: string;
+    options?: Array<{ name?: string; value?: string }> | string;
+}
+
 
 interface CartContextType {
     cartItems: CartItem[];
@@ -97,19 +108,28 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const hasSyncedAfterLogin = useRef(false);
     const syncDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+    // Cleanup sync debounce timer on unmount
+    useEffect(() => {
+        return () => {
+            if (syncDebounceRef.current) {
+                clearTimeout(syncDebounceRef.current);
+            }
+        };
+    }, []);
+
     // Conflict State
     const [conflictInfo, setConflictInfo] = useState<{ name: string, id: string, type: 'reconcile' | 'add' } | null>(null);
     const [pendingItem, setPendingItem] = useState<{ item: Omit<CartItem, 'quantity'>, rId: string, rName: string } | null>(null);
 
     // RECONCILE CARTS (STRICT FRONTEND MERGE)
-    const reconcileCarts = useCallback(async (localCart: any) => {
+    const reconcileCarts = useCallback(async (localCart: { restaurantId?: string; restaurantName?: string; items?: CartItem[] }) => {
         if (!isLoggedIn || hasSyncedAfterLogin.current) return;
 
         try {
             // 1. Fetch current server state
             const remoteCart = await getCart();
-            const hasLocalItems = localCart?.items?.length > 0;
-            const hasRemoteItems = remoteCart?.items?.length > 0;
+            const hasLocalItems = (localCart?.items?.length ?? 0) > 0;
+            const hasRemoteItems = (remoteCart?.items?.length ?? 0) > 0;
 
             // Handle Restaurant Conflict
             if (hasLocalItems && hasRemoteItems && localCart.restaurantId !== remoteCart.restaurantId) {
@@ -130,9 +150,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             let finalRestaurantName = localCart.restaurantName || remoteCart?.restaurantName;
 
             if (hasLocalItems && hasRemoteItems) {
-                finalItems = performFrontendMerge(localCart.items, remoteCart.items);
+                finalItems = performFrontendMerge(localCart.items!, remoteCart.items);
             } else if (hasLocalItems) {
-                finalItems = localCart.items;
+                finalItems = localCart.items!;
             } else if (hasRemoteItems) {
                 finalItems = convertServerItems(remoteCart.items);
                 finalRestaurantId = remoteCart.restaurantId;
@@ -171,8 +191,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     }, [isLoggedIn]);
 
-    const convertServerItems = (remoteItems: any[]): CartItem[] => {
-        return remoteItems.map((rItem: any) => {
+    const convertServerItems = (remoteItems: ServerCartItem[]): CartItem[] => {
+        return remoteItems.map((rItem: ServerCartItem) => {
             const selectedAddons = Array.isArray(rItem.options)
                 ? rItem.options.map((o: any) => ({
                     id: o.value || "",
@@ -212,7 +232,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
     };
 
-    const performFrontendMerge = (local: CartItem[], remote: any[]): CartItem[] => {
+    const performFrontendMerge = (local: CartItem[], remote: ServerCartItem[]): CartItem[] => {
         const mergedMap = new Map<string, CartItem>();
 
         // 1. Process remote items first (trusting server pricing)
@@ -222,13 +242,14 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             mergedMap.set(key, { ...item });
         });
 
-        // 2. Merge local items
+        // 2. Merge local items safely without multiplying quantities
         local.forEach(lItem => {
             const key = `${lItem.menuItemId}-${lItem.customizations || ''}`;
             if (mergedMap.has(key)) {
-                // If exists, increment quantity (frontend deduplication)
+                // Take the higher quantity between local guest cart and remote server cart
+                // to prevent exponential quantity doubling (e.g. 9 -> 18 -> 36) during sync loops
                 const existing = mergedMap.get(key)!;
-                existing.quantity += lItem.quantity;
+                existing.quantity = Math.max(existing.quantity, lItem.quantity);
             } else {
                 // New item
                 mergedMap.set(key, { ...lItem });
@@ -633,28 +654,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }, true); // FORCE REPLACE
 
             if (syncResponse && syncResponse.items) {
-                const mergedItems: CartItem[] = syncResponse.items.map((rItem: any) => ({
-                    id: rItem.id || (rItem.specialInstructions ? `${rItem.menuItemId}-${btoa(rItem.specialInstructions).substring(0, 8)}` : rItem.menuItemId),
-                    menuItemId: rItem.menuItemId,
-                    name: rItem.name,
-                    price: rItem.unitPrice,
-                    quantity: rItem.quantity,
-                    isVeg: true,
-                    isAddon: false,
-                    customizations: rItem.specialInstructions || undefined,
-                    description: Array.isArray(rItem.options)
-                        ? rItem.options.map((o: any) => `${o.name}: ${o.value}`).join(", ")
-                        : (typeof rItem.options === 'string' ? rItem.options : "")
-                }));
-
-                setCartItems(mergedItems);
-                setRestaurantId(syncResponse.restaurantId);
-                setRestaurantName(syncResponse.restaurantName);
-                DIContainer.getCartRepository().saveCart({
-                    restaurantId: syncResponse.restaurantId,
-                    restaurantName: syncResponse.restaurantName,
-                    items: mergedItems
-                });
+                const mergedItems = convertServerItems(syncResponse.items);
+                updateStateWithFinalCart(mergedItems, syncResponse.restaurantId, syncResponse.restaurantName);
             }
         } catch (e) {
             console.error("Force replace failed:", e);
@@ -785,34 +786,57 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
     }, [handleLogout]);
 
+    const contextValue = useMemo(() => ({
+        cartItems,
+        restaurantId,
+        restaurantName,
+        addToCart,
+        removeFromCart,
+        clearCart,
+        refreshCartFromServer,
+        cartTotal,
+        refreshLoginStatus,
+        deliveryQuote,
+        setDeliveryQuote,
+        deliveryStatus,
+        setDeliveryStatus,
+        deliveryError,
+        setDeliveryError,
+        isCheckingDelivery,
+        setIsCheckingDelivery,
+        reorder,
+        isLoggedIn,
+        fulfillmentType,
+        setFulfillmentType,
+        includeCutlery,
+        setIncludeCutlery,
+        updateItemAddon,
+        isCartLoading
+    }), [
+        cartItems,
+        restaurantId,
+        restaurantName,
+        addToCart,
+        removeFromCart,
+        clearCart,
+        refreshCartFromServer,
+        cartTotal,
+        deliveryQuote,
+        deliveryStatus,
+        deliveryError,
+        isCheckingDelivery,
+        reorder,
+        isLoggedIn,
+        fulfillmentType,
+        setFulfillmentType,
+        includeCutlery,
+        setIncludeCutlery,
+        updateItemAddon,
+        isCartLoading
+    ]);
+
     return (
-        <CartContext.Provider value={{
-            cartItems,
-            restaurantId,
-            restaurantName,
-            addToCart,
-            removeFromCart,
-            clearCart,
-            refreshCartFromServer,
-            cartTotal,
-            refreshLoginStatus,
-            deliveryQuote,
-            setDeliveryQuote,
-            deliveryStatus,
-            setDeliveryStatus,
-            deliveryError,
-            setDeliveryError,
-            isCheckingDelivery,
-            setIsCheckingDelivery,
-            reorder,
-            isLoggedIn,
-            fulfillmentType,
-            setFulfillmentType,
-            includeCutlery,
-            setIncludeCutlery,
-            updateItemAddon,
-            isCartLoading
-        }}>
+        <CartContext.Provider value={contextValue}>
             {children}
 
             {conflictInfo && (
@@ -845,27 +869,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
                                     if (conflictInfo.type === 'reconcile') {
                                         getCart().then(remoteCart => {
                                             if (remoteCart && remoteCart.items) {
-                                                const convertedItems: CartItem[] = remoteCart.items.map((rItem: any) => ({
-                                                    id: rItem.id || rItem.menuItemId,
-                                                    menuItemId: rItem.menuItemId,
-                                                    name: rItem.name,
-                                                    price: rItem.unitPrice,
-                                                    quantity: rItem.quantity,
-                                                    isVeg: true,
-                                                    isAddon: false,
-                                                    customizations: rItem.specialInstructions || undefined,
-                                                    description: Array.isArray(rItem.options)
-                                                        ? rItem.options.map((o: any) => `${o.name}: ${o.value}`).join(", ")
-                                                        : (typeof rItem.options === 'string' ? rItem.options : "")
-                                                }));
-                                                setCartItems(convertedItems);
-                                                setRestaurantId(remoteCart.restaurantId);
-                                                setRestaurantName(remoteCart.restaurantName);
-                                                DIContainer.getCartRepository().saveCart({
-                                                    restaurantId: remoteCart.restaurantId,
-                                                    restaurantName: remoteCart.restaurantName,
-                                                    items: convertedItems
-                                                });
+                                                const convertedItems = convertServerItems(remoteCart.items);
+                                                updateStateWithFinalCart(convertedItems, remoteCart.restaurantId, remoteCart.restaurantName);
                                             }
                                         });
                                     }

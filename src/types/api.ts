@@ -16,6 +16,8 @@ export interface RestaurantListItem {
   minOrderAmount: number;
   logoUrl: string | null;
   distanceKm: number | null;
+  rating?: number | null;
+  userRatingCount?: number | null;
 }
 
 export interface PagedRestaurants {
@@ -56,3 +58,19 @@ export interface RestaurantFilters {
   page?: number;
   pageSize?: number;
 }
+
+export interface Review {
+  authorName: string;
+  authorPhotoUrl: string;
+  rating: number; // 1-5
+  text: string;
+  relativeTimeDescription: string;
+}
+
+export interface RestaurantReviewsResponse {
+  restaurantId: string;
+  rating: number | null;
+  userRatingCount: number | null;
+  reviews: Review[];
+}
+
