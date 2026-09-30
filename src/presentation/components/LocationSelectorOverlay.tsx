@@ -89,26 +89,28 @@ export const LocationSelectorOverlay: React.FC<LocationSelectorOverlayProps> = (
             </div>
 
             {/* Search Bar */}
-            <div className="px-4 mb-6 md:px-6">
-                <div className="relative flex items-center">
-                    <Search className="absolute left-4 w-5 h-5 text-gray-400" />
-                    <input
-                        type="text"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Search an area or address"
-                        className="w-full pl-12 pr-12 py-3.5 bg-white border border-gray-200 rounded-2xl text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all shadow-sm"
-                    />
-                    {searchQuery && (
-                        <button 
-                            onClick={() => setSearchQuery('')}
-                            className="absolute right-4 p-1 hover:bg-gray-100 rounded-full transition-colors"
-                        >
-                            <X className="w-4 h-4 text-gray-400" />
-                        </button>
-                    )}
+            {addresses.length > 3 && (
+                <div className="px-4 mb-6 md:px-6">
+                    <div className="relative flex items-center">
+                        <Search className="absolute left-4 w-5 h-5 text-gray-400" />
+                        <input
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            placeholder="Search from saved addresses"
+                            className="w-full pl-12 pr-12 py-3.5 bg-white border border-gray-200 rounded-2xl text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all shadow-sm"
+                        />
+                        {searchQuery && (
+                            <button 
+                                onClick={() => setSearchQuery('')}
+                                className="absolute right-4 p-1 hover:bg-gray-100 rounded-full transition-colors"
+                            >
+                                <X className="w-4 h-4 text-gray-400" />
+                            </button>
+                        )}
+                    </div>
                 </div>
-            </div>
+            )}
 
             {/* Action Buttons */}
             <div className="px-4 grid grid-cols-2 gap-4 mb-6 md:px-6">
