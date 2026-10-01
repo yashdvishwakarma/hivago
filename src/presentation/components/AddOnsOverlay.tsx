@@ -229,6 +229,7 @@ export const AddOnsOverlay: React.FC<AddOnsOverlayProps> = ({ originalItem, onCl
 
             className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm transition-opacity"
             onClick={(e) => {
+                e.stopPropagation();
                 if (e.target === e.currentTarget) onClose();
             }}
         >
@@ -460,7 +461,10 @@ export const AddOnsOverlay: React.FC<AddOnsOverlayProps> = ({ originalItem, onCl
         {isUnavailabilityMenuOpen && (
             <div 
                 className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200" 
-                onClick={() => setIsUnavailabilityMenuOpen(false)}
+                onClick={(e) => {
+                    e.stopPropagation();
+                    setIsUnavailabilityMenuOpen(false);
+                }}
             >
                 <div 
                     className="bg-white w-full max-w-[320px] rounded-[24px] p-6 shadow-2xl animate-in zoom-in-95 duration-200" 

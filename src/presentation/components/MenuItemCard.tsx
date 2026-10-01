@@ -36,7 +36,10 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({ item, restaurantId, 
 
 
     const handleInitialAdd = (e?: React.MouseEvent) => {
-        if (e) e.stopPropagation();
+        if (e) {
+            e.stopPropagation();
+            e.preventDefault();
+        }
         setShowCustomize(true);
     };
 
@@ -61,7 +64,10 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({ item, restaurantId, 
     };
 
     const handleRemove = (e?: React.MouseEvent) => {
-        if (e) e.stopPropagation();
+        if (e) {
+            e.stopPropagation();
+            e.preventDefault();
+        }
         if (cartItemsOfThisType.length > 0) {
             // Remove the last added variation
             removeFromCart(cartItemsOfThisType[cartItemsOfThisType.length - 1].id);
@@ -123,7 +129,7 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({ item, restaurantId, 
                         ₹{formatPrice(item.price)}
                     </span>
 
-                    <div className="flex items-center">
+                    <div className="flex items-center" onClick={(e) => e.stopPropagation()}>
                         {quantity === 0 ? (
                             <button
                                 onClick={handleInitialAdd}
