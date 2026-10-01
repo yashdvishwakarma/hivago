@@ -70,6 +70,7 @@ export const ItemDetailOverlay: React.FC<ItemDetailOverlayProps> = ({ item, onCl
     };
 
     const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
+        e.stopPropagation();
         if (e.target === e.currentTarget) {
             onClose();
         }
