@@ -4,6 +4,7 @@ import { Heart, Star, Clock } from 'lucide-react';
 import { useFavorites } from '../context/FavoritesContext';
 import { useUserLocation } from '../context/LocationContext';
 import { haversineKm, formatDistance } from '../../utils/distanceUtils';
+import { useRestaurantReviews } from '../../hooks/useRestaurantReviews';
 
 export interface Restaurant {
     id: string;
@@ -57,6 +58,12 @@ export const RestaurantCard: React.FC<RestaurantCardProps> = ({
     const { selectedLocation } = useUserLocation();
     const isFav = isFavorite(restaurant.id);
 
+    // Fetch reviews/rating in background if not already provided on the restaurant object
+    const { data: reviewsData } = useRestaurantReviews(restaurant.id, restaurant.rating == null);
+
+    const effectiveRating = restaurant.rating ?? reviewsData?.rating ?? null;
+    const effectiveUserRatingCount = restaurant.userRatingCount ?? reviewsData?.userRatingCount ?? null;
+
     const displayDistance = (() => {
         const uLat = selectedLocation?.latitude;
         const uLng = selectedLocation?.longitude;
@@ -67,16 +74,16 @@ export const RestaurantCard: React.FC<RestaurantCardProps> = ({
     })();
 
     const locationText = restaurant.address || restaurant.addressLine || restaurant.area || restaurant.city || "";
-    const ratingVal = restaurant.rating != null ? restaurant.rating.toFixed(1) : null;
+    const ratingVal = effectiveRating != null ? Number(effectiveRating).toFixed(1) : null;
 
     const ratingCountText = (() => {
         if (restaurant.ratingCountText) return restaurant.ratingCountText;
-        if (restaurant.userRatingCount != null && restaurant.userRatingCount > 0) {
-            if (restaurant.userRatingCount >= 1000) {
-                const k = (restaurant.userRatingCount / 1000).toFixed(restaurant.userRatingCount % 1000 === 0 ? 0 : 1);
+        if (effectiveUserRatingCount != null && effectiveUserRatingCount > 0) {
+            if (effectiveUserRatingCount >= 1000) {
+                const k = (effectiveUserRatingCount / 1000).toFixed(effectiveUserRatingCount % 1000 === 0 ? 0 : 1);
                 return `${k}K ratings`;
             }
-            return `${restaurant.userRatingCount} ratings`;
+            return `${effectiveUserRatingCount} ratings`;
         }
         return null;
     })();
@@ -151,7 +158,7 @@ export const RestaurantCard: React.FC<RestaurantCardProps> = ({
                 <div>
                     {/* Top Row: Name and Rating Badge Stack */}
                     <div className="flex justify-between items-start gap-3 mb-1">
-                        <h3 className="-mt-1 text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight leading-tight group-hover:text-red-600 transition-colors">
+                        <h3 className="-mt-1 text-lg sm:text-2xl font-bold text-gray-900 tracking-tight leading-tight group-hover:text-red-600 transition-colors">
                             {restaurant.name}
                             {/* Cuisine & Cost Line */}
                             {(cuisinesText || costFormatted) && (
